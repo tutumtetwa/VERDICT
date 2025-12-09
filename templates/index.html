@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VERDICT</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☣️</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --text: #f8fafc; 
+            --accent: #3b82f6; --danger: #ef4444; --success: #10b981;
+            --border: #334155;
+        }
+        
+        * { box-sizing: border-box; }
+        body { 
+            background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 40px 40px;
+        }
+        
+        .grid-wrapper {
+            width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 40px; flex-grow: 1;
+        }
+
+        /* CARD STYLES */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 24px; padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 32px; margin: 0; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tagline { color: #94a3b8; font-size: 14px; margin-top: 5px; font-family: 'JetBrains Mono', monospace; }
+
+        /* INPUTS */
+        label { display: block; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 8px 0; }
+        
+        input, textarea {
+            width: 100%; background: #0f172a; border: 1px solid var(--border);
+            color: white; padding: 15px; border-radius: 12px; font-family: 'Inter', sans-serif;
+            transition: 0.3s; font-size: 14px;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        textarea { height: 120px; resize: none; }
+
+        /* UPLOAD ZONE */
+        .drop-zone {
+            border: 2px dashed var(--border); border-radius: 12px; padding: 20px;
+            text-align: center; cursor: pointer; color: #64748b; font-size: 13px;
+            transition: 0.3s; background: rgba(15, 23, 42, 0.5);
+            position: relative; overflow: hidden;
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+        .drop-zone.has-file { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+
+        #img-preview {
+            max-width: 100%; max-height: 200px; border-radius: 8px;
+            display: none; margin: 10px auto; border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* BUTTON */
+        .scan-btn {
+            width: 100%; margin-top: 30px; padding: 18px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: white; font-weight: 800; font-size: 16px; cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); transition: 0.3s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4); }
+
+        /* RESULTS AREA */
+        #results-col { display: none; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .verdict-box {
+            text-align: center; padding: 40px; border-radius: 16px; margin-bottom: 20px;
+            border: 1px solid var(--border); background: #0f172a;
+        }
+        .score-ring {
+            width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 800; border: 8px solid var(--border);
+            position: relative;
+        }
+        
+        .verdict-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .is-spam .score-ring { border-color: var(--danger); color: var(--danger); box-shadow: 0 0 30px rgba(239, 68, 68, 0.2); }
+        .is-spam .verdict-title { color: var(--danger); }
+        
+        .is-safe .score-ring { border-color: var(--success); color: var(--success); box-shadow: 0 0 30px rgba(16, 185, 129, 0.2); }
+        .is-safe .verdict-title { color: var(--success); }
+
+        .alert-item {
+            background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger);
+            padding: 15px; margin-bottom: 10px; border-radius: 6px; font-size: 13px; color: #fca5a5;
+        }
+        .link-item {
+            background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 8px;
+            font-size: 12px; border: 1px solid var(--border); color: #94a3b8; word-break: break-all;
+        }
+
+        .loader { width: 20px; height: 20px; border: 3px solid #ffffff; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; display: none; }
+        
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* FOOTER */
+        .footer {
+            width: 100%; text-align: center; padding: 20px; color: #64748b; font-size: 12px;
+            border-top: 1px solid var(--border); background: #0f172a; margin-top: auto;
+        }
+        .footer a { color: var(--accent); text-decoration: none; font-weight: 700; margin: 0 5px; transition: 0.2s; }
+        .footer a:hover { color: #ffffff; text-shadow: 0 0 8px var(--accent); }
+
+        @media (max-width: 800px) { .grid-wrapper { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="grid-wrapper">
+    <div class="glass-panel">
+        <div style="display:flex; justify-content: space-between; align-items:center;">
+            <div>
+                <h1>VERDICT</h1>
+                <div class="tagline">Next-Gen Phishing & Fraud Detection</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:10px; height:10px; background:var(--success); border-radius:50%; box-shadow:0 0 10px var(--success);"></div>
+                <div style="font-size:12px; font-weight:700; color:var(--success);">ONLINE</div>
+            </div>
+        </div>
+
+        <form id="scanForm">
+            <label>Sender Identity (Email / SMS)</label>
+            <input type="text" id="sender" placeholder="support@paypal-security.com or +1 (555)...">
+
+            <label>Payload Content</label>
+            <textarea id="message" placeholder="Paste email body, suspicious links, or SMS text here..."></textarea>
+
+            <label>Visual Forensics</label>
+            <div class="drop-zone" id="dropZone">
+                <div id="drop-text">
+                    <span style="font-size:20px">📸</span><br>
+                    Drag & Drop Screenshot or Click to Upload
+                </div>
+                <img id="img-preview" src="" alt="Preview">
+                <input type="file" id="screenshot" hidden accept="image/*">
+            </div>
+
+            <button type="submit" class="scan-btn">
+                <span class="loader" id="loader"></span>
+                <span id="btnText">INITIATE SCAN</span>
+            </button>
+        </form>
+    </div>
+
+    <div id="results-col">
+        <div class="verdict-box" id="verdict-box">
+            <div class="score-ring" id="score-ring">0%</div>
+            <div class="verdict-title" id="verdict-text">ANALYZING</div>
+            <div style="color:#64748b; margin-top:10px; font-size:13px;" id="verdict-desc">Processing neural network...</div>
+        </div>
+
+        <div class="glass-panel" style="padding: 25px;">
+            <label style="margin-top:0;">🛑 Forensic Flags</label>
+            <div id="alerts-container"></div>
+
+            <label>🌍 Network Trace</label>
+            <div id="links-container"></div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    ENGINEERED BY 
+    <a href="https://tutumtetwa.com/" target="_blank">Tutu</a> & 
+    <a href="https://www.linkedin.com/in/tatendanyoni/" target="_blank">Tate</a>
+    | CS455 FINAL PROJECT
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('screenshot');
+    const form = document.getElementById('scanForm');
+    const imgPreview = document.getElementById('img-preview');
+    const dropText = document.getElementById('drop-text');
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            fileInput.files = files; 
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgPreview.src = e.target.result;
+                imgPreview.style.display = 'block';
+                dropText.style.display = 'none'; 
+                dropZone.classList.add('has-file');
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    ['dragenter', 'dragover'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.remove('dragover'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        handleFiles(e.dataTransfer.files);
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const messageVal = document.getElementById('message').value;
+        const hasFile = fileInput.files.length > 0;
+
+        if (!messageVal.trim() && !hasFile) {
+            alert("⚠️ Please enter text or upload a screenshot to scan.");
+            return;
+        }
+        
+        const btn = document.querySelector('.scan-btn');
+        const loader = document.getElementById('loader');
+        const btnText = document.getElementById('btnText');
+        
+        btn.style.opacity = "0.7";
+        loader.style.display = "inline-block";
+        btnText.innerText = "SCANNING...";
+        
+        const formData = new FormData();
+        formData.append('message', messageVal);
+        formData.append('sender', document.getElementById('sender').value);
+        if(hasFile) formData.append('screenshot', fileInput.files[0]);
+
+        try {
+            const res = await fetch('/analyze', { method: 'POST', body: formData });
+            if (!res.ok) throw new Error("Server Error");
+            const data = await res.json();
+
+            document.getElementById('results-col').style.display = 'block';
+            
+            const vBox = document.getElementById('verdict-box');
+            const vText = document.getElementById('verdict-text');
+            const vDesc = document.getElementById('verdict-desc');
+            const ring = document.getElementById('score-ring');
+
+            vBox.className = 'verdict-box'; 
+            if(data.verdict === 'SPAM') {
+                vBox.classList.add('is-spam');
+                vText.innerText = "MALICIOUS THREAT";
+                vDesc.innerText = "High-confidence threat indicators detected by AI & Heuristics.";
+            } else {
+                vBox.classList.add('is-safe');
+                vText.innerText = "SAFE COMMUNICATION";
+                vDesc.innerText = "No known threat patterns or forensic anomalies found.";
+            }
+            ring.innerText = Math.round(data.confidence) + "%";
+
+            const alerts = document.getElementById('alerts-container');
+            alerts.innerHTML = "";
+            if(data.alerts && data.alerts.length) {
+                data.alerts.forEach(a => alerts.innerHTML += `<div class="alert-item">${a}</div>`);
+            } else {
+                alerts.innerHTML = "<div style='color:#10b981; font-size:13px;'>✅ System clean. No anomalies.</div>";
+            }
+
+            const links = document.getElementById('links-container');
+            links.innerHTML = "";
+            if(data.urls_found && data.urls_found.length) {
+                data.urls_found.forEach(url => links.innerHTML += `<div class="link-item">${url}</div>`);
+            } else {
+                links.innerHTML = "<div style='color:#64748b; font-size:13px;'>No external connections found.</div>";
+            }
+
+        } catch(err) {
+            console.error(err);
+            alert("Error connecting to server.");
+        }
+
+        btn.style.opacity = "1";
+        loader.style.display = "none";
+        btnText.innerText = "INITIATE SCAN";
+    });
+</script>
+
+</body>
+</html>
