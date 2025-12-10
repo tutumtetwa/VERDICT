@@ -188,6 +188,7 @@
     const imgPreview = document.getElementById('img-preview');
     const dropText = document.getElementById('drop-text');
 
+    // --- HANDLE FILE SELECTION & PREVIEW ---
     function handleFiles(files) {
         if (files.length > 0) {
             const file = files[0];
@@ -216,6 +217,7 @@
         handleFiles(e.dataTransfer.files);
     });
 
+    // --- SUBMIT LOGIC ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -242,8 +244,18 @@
 
         try {
             const res = await fetch('/analyze', { method: 'POST', body: formData });
-            if (!res.ok) throw new Error("Server Error");
             const data = await res.json();
+
+            // --- CRITICAL FIX: HANDLE SERVER ERRORS ---
+            if (data.error) {
+                alert("⚠️ System Alert: " + data.error + "\n\n(Tip: OCR Image Scanning often requires a paid server. For the live demo, please Paste the Text instead!)");
+                
+                // Reset UI
+                btn.style.opacity = "1";
+                loader.style.display = "none";
+                btnText.innerText = "INITIATE SCAN";
+                return;
+            }
 
             document.getElementById('results-col').style.display = 'block';
             
@@ -262,7 +274,8 @@
                 vText.innerText = "SAFE COMMUNICATION";
                 vDesc.innerText = "No known threat patterns or forensic anomalies found.";
             }
-            ring.innerText = Math.round(data.confidence) + "%";
+            // Fix: Check if confidence is valid number, else default to 0
+            ring.innerText = (data.confidence ? Math.round(data.confidence) : 0) + "%";
 
             const alerts = document.getElementById('alerts-container');
             alerts.innerHTML = "";
@@ -282,7 +295,7 @@
 
         } catch(err) {
             console.error(err);
-            alert("Error connecting to server.");
+            alert("Error connecting to server. Please try again.");
         }
 
         btn.style.opacity = "1";
