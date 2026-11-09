@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VERDICT</title>
+    <title>VERDICT · Phishing &amp; SMS Scam Detector</title>
+    <meta name="description" content="Paste a suspicious email or text message. VERDICT combines a Naive Bayes spam classifier with link, sender and homoglyph forensics to flag phishing.">
+    <link rel="canonical" href="{{ request.url_root }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="VERDICT · Phishing &amp; SMS Scam Detector">
+    <meta property="og:description" content="Machine-learning spam classifier plus link, sender and homoglyph forensics.">
+    <meta property="og:url" content="{{ request.url_root }}">
+    <meta property="og:image" content="{{ request.url_root }}static/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#0f172a">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☣️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -134,14 +143,15 @@
         </div>
 
         <form id="scanForm">
-            <label>Sender Identity (Email / SMS)</label>
+            <label for="sender">Sender Identity (Email / SMS)</label>
             <input type="text" id="sender" placeholder="support@paypal-security.com or +1 (555)...">
 
-            <label>Payload Content</label>
+            <label for="message">Payload Content</label>
             <textarea id="message" placeholder="Paste email body, suspicious links, or SMS text here..."></textarea>
 
-            <label>Visual Forensics</label>
-            <div class="drop-zone" id="dropZone">
+            {% if ocr_enabled %}
+            <label for="screenshot">Visual Forensics</label>
+            <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Upload a screenshot">
                 <div id="drop-text">
                     <span style="font-size:20px">📸</span><br>
                     Drag & Drop Screenshot or Click to Upload
@@ -149,6 +159,11 @@
                 <img id="img-preview" src="" alt="Preview">
                 <input type="file" id="screenshot" hidden accept="image/*">
             </div>
+            {% else %}
+            <input type="file" id="screenshot" hidden accept="image/*">
+            <div id="dropZone" hidden><div id="drop-text"></div><img id="img-preview" src="" alt=""></div>
+            {% endif %}
+            <button type="button" id="exampleBtn" style="margin-top:14px;background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;">Try a sample scam message</button>
 
             <button type="submit" class="scan-btn">
                 <span class="loader" id="loader"></span>
@@ -176,9 +191,11 @@
 
 <div class="footer">
     ENGINEERED BY 
-    <a href="https://tutumtetwa.com/" target="_blank">Tutu</a> & 
-    <a href="https://www.linkedin.com/in/tatendanyoni/" target="_blank">Tate</a>
+    <a href="https://tutumtetwa.com/" target="_blank" rel="noopener">Tutu</a> & 
+    <a href="https://www.linkedin.com/in/tatendanyoni/" target="_blank" rel="noopener">Tate</a>
     | CS455 FINAL PROJECT
+    | <a href="https://github.com/tutumtetwa/VERDICT" target="_blank" rel="noopener">Source</a>
+    <div style="margin-top:6px;opacity:.7">Messages are analyzed in memory and never stored. Links you paste are checked from our server.</div>
 </div>
 
 <script>
@@ -304,5 +321,12 @@
     });
 </script>
 
+<script>
+document.getElementById('exampleBtn').addEventListener('click', () => {
+  document.getElementById('sender').value = 'security@paypa1-support.com';
+  document.getElementById('message').value = 'URGENT: Your account has been suspended. Verify your identity within 24 hours to avoid permanent closure. Click here: http://bit.ly/3verify-acct and claim your $500 refund now!';
+  document.getElementById('message').focus();
+});
+</script>
 </body>
 </html>
